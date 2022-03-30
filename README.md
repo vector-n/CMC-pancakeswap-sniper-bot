@@ -10,7 +10,7 @@ The bot works on every system including android.
 1) First install nodejs in your system ( Windows, Linux, Android)
 2) Clone this repository with git ( make sure you have `git` installed first )
 ```
-git clone github.com/abu0ali/CMC-pancakeswap-sniper-bot.git
+git clone https://github.com/vector-n/CMC-pancakeswap-sniper-bot
 ```
 3) Go to [telegram](https://my.telegram.org/) and sign in, then click on API developement tools > Create application, then copy you API_ID and API_HASH
 4) Open terminal in bot directory and run `npm install` to install all dependencies
