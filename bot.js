@@ -57,7 +57,7 @@ const tokenAbi = [
 // date input (Edit these data)
 const data =
 {
-    investmentAmount: '0.0001', 	// Investment amount per token
+    investmentAmount: '0.1', 	// Investment amount per token
     maxBuyTax: 20,      	// max buy tax
     minBuyTax: 0,		    	// min buy tax
     maxSellTax: 20,   		// max sell tax
