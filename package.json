@@ -1,0 +1,22 @@
+{
+  "name": "CMC-PANCAKESWAP-SNIPER-BOT",
+  "version": "1.0",
+  "description": "",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "snipe": "node bot.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.1",
+    "dotenv": "^16.0.0",
+    "ethers": "^5.5.4",
+    "fs": "^0.0.1-security",
+    "input": "^1.0.1",
+    "open": "^8.4.0",
+    "telegram": "2.4.6"
+  }
+}
