@@ -1,6 +1,11 @@
 # CMC-pancakeswap-sniper-bot
 The fastest Sniper bot that snipe any token that will be listed on Coinmarketcap on telegram https://t.me/CMC_fastest_alerts 
 The bot works on every system including android.
+
+## Updates 
+
+* Bot version 1.0 ( added checking profit and setting StopLoss before selling)
+
 ## Prerequisites
 1) First install nodejs in your system ( Windows, Linux, Android)
 2) Clone this repository with git ( make sure you have `git` installed first )
