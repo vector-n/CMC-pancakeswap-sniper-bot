@@ -1,5 +1,7 @@
 /*
+
 Coinmarketcap sniper bot that uses telegram notification from specific channel make sure you join the telegram channel before running the bot https://t.me/CMC_fastest_alerts
+
 ## Tips for you:
 Turn on two step verification in telegram.
 Go to my.telegram.org and create App to get api_id and api_hash.
@@ -63,11 +65,11 @@ const data =
     maxSellTax: 20,   		// max sell tax
     maxLiquidity: 10000,  // max Liquidity BNB
     minLiquidity: 5, 	  	// min Liquidity BNB
-    profitPercent: 15,    // 50% profit
-    stopLossPercent: 5,   // 10% loss
+    profitPercent: 100,    // 50% profit
+    stopLossPercent: 10,   // 10% loss
     percentOfTokensToSellProfit: 75, // sell 75% of tokens when profit is reached
     percentOfTokensToSellLoss: 100, // sell 100% of tokens when stoploss is reached
-    trailingStopLossPercent: 10, // % trailing stoploss
+    trailingStopLossPercent: 8, // % trailing stoploss
     
     gasPrice: ethers.utils.parseUnits('5', 'gwei'), // Gas price 
     gasLimit: 350000, // Gas Limit 
@@ -86,9 +88,9 @@ var sellCount = 0;
 var buyCount = 0;
 var dontBuyTheseTokens;
 const autoSell = true; // Type "false" if you don't want the bot to auto sell the token
-const numberOfTokensToBuy = 5; // How many token you want to buy 
+const numberOfTokensToBuy = 10; // How many token you want to buy 
 const channel = 'CMC';
-const chID = 1519789792;
+const chID = 1736654430;
 // end: Properties 
 
 
@@ -159,26 +161,27 @@ function onNewMessageCMC(message) {
 		console.log(timeStamp);
 		const msg = message.message.replace(/\n/g, " ").split(" ");
 		var address = '';
-
+//console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
 		for (var i = 0; i < msg.length; i++) {
-        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
+        
 			if (msg[i] == "BNB") {
 				var liquidity = parseFloat(msg[i - 1]);
-				console.log(chalk.yellow('Liquidity:', liquidity, 'BNB'));
+				console.log('Liquidity:', liquidity, 'BNB');
 			}
 			if (msg[i] == "(buy)") {
 				var slipBuy = parseInt(msg[i - 1]);
-				console.log(chalk.yallow('Buy tax: ', slipBuy, '%'));
+				console.log('Buy tax:', slipBuy, '%');
 			}
 			if (msg[i] == "(sell)") {
 				var slipSell = parseInt(msg[i - 1]);
-				console.log(chalk.yellow('Sell tax:', slipSell, '%'));
+				console.log('Sell tax:', slipSell, '%');
 			}
 			if (ethers.utils.isAddress(msg[i])) {
 				address = msg[i];
 				console.log(chalk.blue('Contract:', address));
-console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
+
 			}
+//console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
 		}
 	
 		if (isStrategy(liquidity, slipBuy, slipSell, msg, address) && msg.includes("Insider")) {
@@ -204,11 +207,12 @@ console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
 				currentValue: 0,
 				previousValue: 0
 			});
-			console.log('<<< Attention! Buying token now! >>> Contract:', address);
-			buy();
+			console.info('<<< Attention! Buying token now! >>>');
+			console.info(chalk.blue('Contract:', address));
+       buy();
 		}
 		else {
-			console.log(chalk.red('Not buying this token, it does not match strategy or liquidity is not BNB. Waiting for telegram notification to try and buy again...', '\n'));
+			console.log(chalk.red('Not buying this token, it does not match the strategy you put or liquidity is not BNB. Waiting for telegram notification to try and buy again...', '\n'));
 		}
 	}
 
@@ -240,7 +244,7 @@ function didNotBuy(address) {
 
 // Buying the token 
 async function buy() {
-		if (buyCount < data.numberOfTokensToBuy) {
+		if (buyCount < numberOfTokensToBuy) {
 			const value = ethers.utils.parseUnits(token[buyCount].investmentAmount, 'ether').toString();
 			const tx = await buyContract.buyTokens(token[buyCount].tokenAddress, addresses.recipient,
 				{
@@ -287,10 +291,10 @@ async function approve() {
 		const receipt = await tx.wait();
 		console.log(chalk.green("Approve transaction hash: ", receipt.transactionHash, "\n"));
 	//	confirm autosell is true
-		if (data.autoSell) {
+		if (autoSell) {
 			token[buyCount - 1].checkProfit();
 		} else {
-			if (buyCount == data.numberOfTokensToBuy) {
+			if (buyCount == numberOfTokensToBuy) {
 				process.exit();
 			}
 		}
@@ -353,7 +357,7 @@ async function checkForProfit(token) {
 			}
 
 			if (currentValue.gte(profitDesired)) {
-				if (buyCount <= data.numberOfTokensToBuy && token.didBuy && sellAttempts == 0) {
+				if (buyCount <= numberOfTokensToBuy && token.didBuy && sellAttempts == 0) {
 					sellAttempts++;
 					console.log(chalk.blue("<<< Selling -", tokenName, "- now" + "\u001b[1;32m" + " Profit target " + "\u001b[0m" + "reached >>>", "\n"));
 					sell(token, true);
@@ -363,7 +367,7 @@ async function checkForProfit(token) {
 
 			if (currentValue.lte(stopLoss)) {
 				console.log("\u001b[38;5;33m" + "less than StopLoss!" + "\u001b[0m");
-				if (buyCount <= data.numberOfTokensToBuy && token.didBuy && sellAttempts == 0) {
+				if (buyCount <= numberOfTokensToBuy && token.didBuy && sellAttempts == 0) {
 					sellAttempts++;
 					console.log(chalk.blue("<<< Selling -", tokenName, "- now" + "\u001b[1;31m" + " StopLoss " + "\u001b[0m" + "reached >>>", "\n"));
 					sell(token, false);
@@ -428,7 +432,7 @@ async function sell(tokenObj, isProfit) {
 			sellCount++;
 			let name = await tokenObj.contract.name();
 		}
-		if (buyCount == data.numberOfTokensToBuy) {
+		if (buyCount == numberOfTokensToBuy) {
 			console.log(chalk.green("All tokens sold"));
 			process.exit();
 		}
