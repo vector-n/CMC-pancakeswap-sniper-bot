@@ -109,7 +109,7 @@ const chID = 1736654430;
   	console.log(chalk.green("Your string session is:", client.session.save(), '\n'));
   	console.log("Copy the string above ^^ and paste in .env file stringSession, if you already did that please ignore this message.\n")
 	  console.log(chalk.green('=================================================='));
-	  console.log(chalk.green(`Current Version of the bot is v1.0.0`));
+	  console.log(chalk.green(`Current Version of the bot is v1.0.1`));
     console.log(chalk.green('=================================================='));
     console.log(chalk.green(`Coin Market Cap - Sniper bot\n`));
     console.log(chalk.green(`wallet address: ${wallet.address}`));
