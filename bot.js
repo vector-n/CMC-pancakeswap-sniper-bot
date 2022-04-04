@@ -90,7 +90,7 @@ var dontBuyTheseTokens;
 const autoSell = true; // Type "false" if you don't want the bot to auto sell the token
 const numberOfTokensToBuy = 10; // How many token you want to buy 
 const channel = 'CMC';
-const chID = 1736654430;
+const chID = 1519789792;
 // end: Properties 
 
 
