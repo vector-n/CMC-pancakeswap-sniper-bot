@@ -265,7 +265,7 @@ async function buy() {
 				} else {
 					var obj = JSON.parse(data);
 					obj.tokens.push({ address: token[buyCount - 1].tokenAddress });
-					json = JSON.stringify(obj, null, 4);
+					let json = JSON.stringify(obj, null, 4);
 					fs.writeFile('tokensBought.json', json, 'utf8', function (err) {
 						if (err) throw err;
 
