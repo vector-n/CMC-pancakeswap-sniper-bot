@@ -1,7 +1,7 @@
 /*
 
 Coinmarketcap sniper bot that uses telegram notification from specific channel make sure you join the telegram channel before running the bot https://t.me/CMC_fastest_alerts
-
+  https://t.me/CMC_CG_listing_alerts
 ## Tips for you:
 Turn on two step verification in telegram.
 Go to my.telegram.org and create App to get api_id and api_hash.
@@ -14,6 +14,7 @@ import ethers from 'ethers';
 import open from 'open';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
+import Cfonts from 'cfonts';
 import fs from 'fs';
 dotenv.config();
 
@@ -51,7 +52,8 @@ const tokenAbi = [
 	'event Transfer(address indexed from, address indexed to, uint amount)',
 	'function name() view returns (string)',
 	'function buyTokens(address tokenAddress, address to) payable',
-	'function decimals() external view returns (uint8)'
+	'function decimals() external view returns (uint8)',
+	'function fifteenMinutesLock() public view returns (uint256)'
 ];
 //end: function and events
 
@@ -59,14 +61,14 @@ const tokenAbi = [
 // date input (Edit these data)
 const data =
 {
-    investmentAmount: '0.1', 	// Investment amount per token
+    investmentAmount: '0.002', 	// Investment amount per token
     maxBuyTax: 20,      	// max buy tax
     minBuyTax: 0,		    	// min buy tax
     maxSellTax: 20,   		// max sell tax
     maxLiquidity: 10000,  // max Liquidity BNB
     minLiquidity: 5, 	  	// min Liquidity BNB
-    profitPercent: 100,    // 50% profit
-    stopLossPercent: 10,   // 10% loss
+    profitPercent: 10,    // 50% profit
+    stopLossPercent: 5,   // 10% loss
     percentOfTokensToSellProfit: 75, // sell 75% of tokens when profit is reached
     percentOfTokensToSellLoss: 100, // sell 100% of tokens when stoploss is reached
     trailingStopLossPercent: 8, // % trailing stoploss
@@ -83,24 +85,30 @@ const pancakeRouter = new ethers.Contract(addresses.pancakeRouter, pancakeAbi, a
 
 // ** Don't change these ** 
 var client;
+var channel;
+var platform;
 let token = [];
 var sellCount = 0;
 var buyCount = 0;
 var dontBuyTheseTokens;
 const autoSell = true; // Type "false" if you don't want the bot to auto sell the token
 const numberOfTokensToBuy = 10; // How many token you want to buy 
-const channel = 'CMC';
+// const channel = 'CMC';
 const chID = 1519789792;
+const ch2ID = 1517585345;
 // end: Properties 
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
-
-// Starting telegram setups
+// Starting main setups
 (async () => {
-  const client = new TelegramClient(new StringSession(process.env.stringSession), apiId, apiHash, { 
+  
+    await welcomeBanner();
+    await delay(1000)
+      const client = new TelegramClient(new StringSession(process.env.stringSession), apiId, apiHash, { 
           useWSS:true, 
-          connectionRetries: 5,
+          connectionRetries: 5
 });
-	await client.start({
+	 client.start({
 		phoneNumber: async () => await input.text("Please, type your telegram Phone number:"),
 		password: async () => await input.text("Type the password of your telegram account:"),
 		phoneCode: async () => await input.text("Type the code that have sent to your account:"),
@@ -108,8 +116,86 @@ const chID = 1519789792;
 	});
   	console.log(chalk.green("Your string session is:", client.session.save(), '\n'));
   	console.log("Copy the string above ^^ and paste in .env file stringSession, if you already did that please ignore this message.\n")
-	  console.log(chalk.green('=================================================='));
-	  console.log(chalk.green(`Current Version of the bot is v1.0.1`));
+    await delay(2000);
+    await channels();
+    await validateInput();
+    await allinfo();
+	  
+	let raw = await readFile('tokensBought.json');
+	let tokensBought = JSON.parse(raw);
+	dontBuyTheseTokens = tokensBought.tokens;
+	  await client.addEventHandler(onNewMessage, new NewMessage({}));
+})();
+
+  async function welcomeBanner(){
+    Cfonts.say('Sniper Bot',{
+    font: 'block',
+    align: 'center',
+    colors: ['magentaBright'],
+    background: 'transparent', 
+    letterSpacing: 1, 
+    lineHeight: 1,
+    space: true,
+    maxLength:'0',
+  });
+  await delay(500)
+  console.log('Github: https://github.com/vector-n');
+  console.log('Telegram: https://Telegram.me/cmc_sniper\n');
+  
+}
+
+  async function channels(){
+    const choices = [ 'Coinmarketcap Fastest Alerts', 'CoinGecko & CoinMarketCap Listing Alerts' ];
+    const choices2 = ['COINMARKETCAP', 'COINGECKO'];
+    var channelAnswer;
+      await input.select('Please, choose a channel to buy from', choices).then(async function (channelAnswer) {
+
+     if (channelAnswer == "CoinGecko & CoinMarketCap Listing Alerts") {
+
+          channel = 'CGCMC'
+     await input.select('Choose coinmarketcap or coingecko', choices2).then(async function (answers2) {
+           if (answers2 == "COINMARKETCAP") {
+              platform = "COINMARKETCAP";
+              } else {
+              platform = "COINGECKO";
+          }});
+             } else {
+                    channel = 'CMC'
+                }
+            }
+            
+            
+            );
+  }
+  function validateInput(){
+    
+     console.log(chalk.green('Validating input from .env config file...'));
+    if (data.investmentAmount === undefined || data.investmentAmount === '') {
+        console.log(chalk.yellow('Validation failed:'));
+        console.log(chalk.red("Please define the investment variable in the bot"));
+        process.exit(-1);
+    }
+    if (addresses.recipient === undefined || addresses.recipient === '') {
+        console.log(chalk.yellow('Validation failed:'));
+        console.log(chalk.red("Please define recipient variable in .env"));
+        process.exit(-1);
+    }
+    if (privateKey === undefined || privateKey === '') {
+        console.log(chalk.yellow('Validation failed:'));
+        console.log(chalk.red("Please define privatekey variable in .env"));
+        process.exit(-1);
+    }
+    if (node === undefined || node === '') {
+        console.log(chalk.yellow('Validation failed:'));
+        console.log(chalk.red("Please define node variable in .env"));
+        process.exit(-1);
+    }
+    console.log(chalk.green('All input was successfully validated!'));
+  }
+  function allinfo(){
+    
+    console.log(chalk.green('=================================================='));
+	  console.log(chalk.green(`Current Version of the bot is v1.0.2`));
     console.log(chalk.green('=================================================='));
     console.log(chalk.green(`Coin Market Cap - Sniper bot\n`));
     console.log(chalk.green(`wallet address: ${wallet.address}`));
@@ -123,13 +209,8 @@ const chID = 1519789792;
     console.log(chalk.green('Proceeding to snipe...'));
 	console.log(chalk.green('=================================================='));
 
-	let raw = await readFile('tokensBought.json');
-	let tokensBought = JSON.parse(raw);
-	dontBuyTheseTokens = tokensBought.tokens;
-	client.addEventHandler(onNewMessage, new NewMessage({}));
-//	console.log("...");
-})();
-
+  }
+  
 async function readFile(path) {
 	return new Promise((resolve, reject) => {
 		fs.readFile(path, 'utf8', function (err, data) {
@@ -146,7 +227,9 @@ async function onNewMessage(event) {
 	const message = event.message;
 	if (channel == 'CMC') {
 		onNewMessageCMC(message);
-	} else {
+	} else if (channel == 'CGCMC') {
+	  onNewMessageCGCMC(message);
+	} else { 
 		console.log(chalk.red("Invalid Channel"));
 	}
 }
@@ -210,13 +293,81 @@ function onNewMessageCMC(message) {
 			console.info('<<< Attention! Buying token now! >>>');
 			console.info(chalk.blue('Contract:', address));
        buy();
-		}
-		else {
+		} else {
 			console.log(chalk.red('Not buying this token, it does not match the strategy you put or liquidity is not BNB. Waiting for telegram notification to try and buy again...', '\n'));
 		}
 	}
 
 }
+
+function onNewMessageCGCMC(message){
+  
+  if (message.peerId.channelId == ch2ID) {
+		console.log(chalk.blue('--- NEW TOKEN FOUND FROM COINGECKO & COINMARKETCAP CHANNEL ---'));
+		let timeStamp = new Date().toLocaleString();
+		console.log(timeStamp);
+		const msg = message.message.replace(/\n/g, " ").split(" ");
+		var address = '';
+		if (msg.includes("COINMARKETCAP")) {
+			console.log(chalk.yellow('Platform: COINMARKETCAP'));
+		}
+		if (msg.includes("COINGECKO")) {
+			console.log(chalk.yellow('Platform: COINGECKO'));
+		}
+		for (var i = 0; i < msg.length; i++) {
+			if (ethers.utils.isAddress(msg[i])) {
+				address = msg[i];
+				console.log(chalk.blue('Contract:', address));
+	//			console.log('--- --------------- ---');
+			}
+			if (msg[i] == "BNB") {
+				var liquidity = parseFloat(msg[i - 1]);
+				console.log(chalk.blue('Liquidity:', liquidity, 'BNB'));
+			}
+			if (msg[i] == "(buy)") {
+				var slipBuy = parseInt(msg[i - 1]);
+				console.log('Buy tax: ', slipBuy, '%');
+			}
+			if (msg[i] == "(sell)") {
+				var slipSell = parseInt(msg[i - 1]);
+				console.log('Sell tax:', slipSell, '%');
+			}
+		}
+  
+  
+  if (isStrategy(liquidity, slipBuy, slipSell, msg, address) && msg.includes(platform)) {
+			token.push({
+				tokenAddress: address,
+				didBuy: false,
+				hasSold: false,
+				tokenSellTax: slipSell,
+				buyPath: [addresses.WBNB, address],
+				sellPath: [address, addresses.WBNB],
+				contract: new ethers.Contract(address, tokenAbi, account),
+				investmentAmount: data.investmentAmount,
+				profitPercent: data.profitPercent,
+				stopLossPercent: data.stopLossPercent,
+				gasPrice: data.gasPrice,
+				checkProfit: function () { checkForProfit(this); },
+				percentOfTokensToSellProfit: data.percentOfTokensToSellProfit,
+				percentOfTokensToSellLoss: data.percentOfTokensToSellLoss,
+				trailingStopLossPercent: data.trailingStopLossPercent,
+				stopLoss: 0,
+				intitialValue: 0,
+				newValue: 0,
+				currentValue: 0,
+				previousValue: 0
+			});
+			console.log('<<< Attention! Buying token now! >>> Contract:', address);
+			buy();
+		} else {
+			console.log(chalk.red('Not buying this token, it does not match the strategy you put or liquidity is not BNB. Waiting for telegram notification to try and buy again...', '\n'));
+		}
+    
+  }
+  
+}
+
 
 // Chacking the strategy set up
 function isStrategy(liquidity, buyTax, sellTax, msg, address) {
@@ -244,7 +395,20 @@ function didNotBuy(address) {
 
 // Buying the token 
 async function buy() {
-		if (buyCount < numberOfTokensToBuy) {
+  
+  var Scam;
+	try {
+		var check = await token[buyCount].contract.fifteenMinutesLock();
+		Scam = true;
+		console.log("\u001b[1;31m" + 'Scam Token not buying' + "\u001b[0m" , "\n");
+		token.pop();
+		
+	} catch (e) {
+	
+		Scam = false;
+	}
+  
+		if (buyCount < numberOfTokensToBuy  && Scam == false) {
 			const value = ethers.utils.parseUnits(token[buyCount].investmentAmount, 'ether').toString();
 			const tx = await buyContract.buyTokens(token[buyCount].tokenAddress, addresses.recipient,
 				{
@@ -265,7 +429,7 @@ async function buy() {
 				} else {
 					var obj = JSON.parse(data);
 					obj.tokens.push({ address: token[buyCount - 1].tokenAddress });
-					let json = JSON.stringify(obj, null, 4);
+				let	json = JSON.stringify(obj, null, 4);
 					fs.writeFile('tokensBought.json', json, 'utf8', function (err) {
 						if (err) throw err;
 
