@@ -115,7 +115,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 		onError: (err) => console.log(err),
 	});
   	console.log(chalk.green("Your string session is:", client.session.save(), '\n'));
-  	console.log("Copy the string above ^^ and paste in .env file stringSession, if you already did that please ignore this message.\n")
+  	console.log("Copy the string above ^^ and paste in .env file stringSession, if you already did that please ignore this message.\n");
     await delay(2000);
     await channels();
     await validateInput();
